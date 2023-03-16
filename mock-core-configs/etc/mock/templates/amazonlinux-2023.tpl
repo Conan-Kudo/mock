@@ -1,0 +1,52 @@
+config_opts['root'] = 'amazonlinux-2023-{{ target_arch }}'
+config_opts['chroot_setup_cmd'] = 'install @buildsys-build'
+config_opts['dist'] = 'amzn2023' # only useful for --resultdir variable subst
+config_opts['plugin_conf']['ccache_enable'] = False
+config_opts['package_manager'] = 'dnf'
+config_opts['description'] = 'Amazon Linux 2023'
+config_opts['releasever'] = 'latest'
+
+config_opts['bootstrap_image'] = 'public.ecr.aws/amazonlinux/amazonlinux:2023'
+
+config_opts['dnf.conf'] = """
+[main]
+keepcache=1
+debuglevel=2
+reposdir=/dev/null
+logfile=/var/log/yum.log
+retries=20
+obsoletes=1
+gpgcheck=0
+assumeyes=1
+syslog_ident=mock
+sysleg_device=
+install_weak_deps=0
+user_agent={{ user_agent }}
+
+[amazonlinux]
+name=Amazon Linux 2023 repository - $basearch
+mirrorlist=https://cdn.amazonlinux.com/al2023/core/mirrors/$releasever/$basearch/mirror.list
+enabled=1
+repo_gpgcheck=0
+type=rpm
+gpgcheck=1
+gpgkey=file:///usr/share/distribution-gpg-keys/amazon-linux/RPM-GPG-KEY-amazon-linux-2023
+
+[amazonlinux-source]
+name=Amazon Linux 2023 repository - Source packages
+mirrorlist=https://cdn.amazonlinux.com/al2023/core/mirrors/$releasever/SRPMS/mirror.list
+enabled=0
+repo_gpgcheck=0
+type=rpm
+gpgcheck=1
+gpgkey=file:///usr/share/distribution-gpg-keys/amazon-linux/RPM-GPG-KEY-amazon-linux-2023
+
+[amazonlinux-debuginfo]
+name=Amazon Linux 2023 repository - $basearch - Debug
+mirrorlist=https://cdn.amazonlinux.com/al2023/core/mirrors/$releasever/debuginfo/$basearch/mirror.list
+enabled=0
+repo_gpgcheck=0
+type=rpm
+gpgcheck=1
+gpgkey=file:///usr/share/distribution-gpg-keys/amazon-linux/RPM-GPG-KEY-amazon-linux-2023
+"""
