@@ -8,8 +8,8 @@ based on the kernels cgroupv2 controllers during the build phase and
 dumps a json file 'system_monitor.json' with the collected statistics
 in the result dir
 
-Currently dumped statistics include total maximum memory usage for the build
-and the process with maximum memory RSS
+Currently dumped statistics include total maximum memory usage for the
+build, the process with maximum memory RSS and max swap usage
 
 The plugin requires the use of systemd-nspawn as build container runner
 

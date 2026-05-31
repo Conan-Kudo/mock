@@ -2,6 +2,7 @@
 """
 Track various system statistics during the build phase.
 - Report maximum allocated memory in total and for the "biggest" process
+- Report maximum swap usage
 
 The plugin requires systemd-nspawn as build container runner
 """
@@ -74,7 +75,8 @@ class SystemMonitor:
 
     def sysmon_thread(self, buildroot, interval):
         """ Main monitoring thread """
-        current_peak = 0
+        current_memory_peak = 0
+        current_swap_peak = 0
 
         machine_id = self.get_machine_id(buildroot)
         if machine_id is None:
@@ -89,30 +91,43 @@ class SystemMonitor:
             ustr = ustr.decode("utf-8")
         machine_id_unit = ustr.rstrip().split('=')[1]
         scope_dir = f"/sys/fs/cgroup/machine.slice/{machine_id_unit}"
-        peak_file = os.path.join(scope_dir, "memory.peak")
+        memory_peak_file = os.path.join(scope_dir, "memory.peak")
+        swap_peak_file = os.path.join(scope_dir, "memory.swap.peak")
 
         while not self.sysmon_stop_event.is_set():
             max_status = "Current"
             pid_status = "Current"
+            swap_status = "Current"
 
             try:
-                if os.path.exists(peak_file):
-                    with open(peak_file, 'r', encoding="utf-8") as f:
-                        current_peak = int(f.read().strip())
+                if os.path.exists(memory_peak_file):
+                    with open(memory_peak_file, 'r', encoding="utf-8") as f:
+                        current_memory_peak = int(f.read().strip())
 
-                if current_peak > self.max_memory_peak:
+                if current_memory_peak > self.max_memory_peak:
                     max_status = "NEW"
-                    self.max_memory_peak = current_peak
+                    self.max_memory_peak = current_memory_peak
+
+                if os.path.exists(swap_peak_file):
+                    with open(swap_peak_file, 'r', encoding="utf-8") as f:
+                        current_swap_peak = int(f.read().strip())
+
+                if current_swap_peak > self.max_swap_peak:
+                    swap_status = "NEW"
+                    self.max_swap_peak = current_swap_peak
 
                 top = self.get_top_process_info(f"{scope_dir}/payload")
                 if top[0] > self.top_rss[0]:
                     pid_status = "NEW"
                     self.top_rss = top
 
-                if f"{max_status}{pid_status}" != "CurrentCurrent":
-                    getLog().debug(
-                        "SYSMON: %s PEAK %.2f MiB | SYSMON: %s Top Process: RSS:%.2f MiB [%s]",
+                if f"{max_status}{swap_status}{pid_status}" != "CurrentCurrentCurrent":
+                    getLog().debug("SYSMON: "
+                        "%s MEMORY PEAK %.2f MiB | "
+                        "%s SWAP PEAK %.2f MiB | "
+                        "%s Top Process: RSS:%.2f MiB [%s]",
                         max_status, self.max_memory_peak / 1048576,
+                        swap_status, self.max_swap_peak / 1048576,
                         pid_status, self.top_rss[0] / 1048576, self.top_rss[1]
                     )
             except (IOError, ValueError):
@@ -142,19 +157,23 @@ class SystemMonitor:
     def _on_postbuild(self):
         self.sysmon_stop_event.set()
         self.sysmon_timer_thread.join()
-        getLog().info(
-            "SYSMON: Total Memory Peak %.2f MiB | Top process: RSS:%.2f MiB [%s]",
-            self.max_memory_peak / 1048576, self.top_rss[0] / 1048576, self.top_rss[1]
+        getLog().info("SYSMON: "
+            "Total Memory Peak %.2f MiB | Total Swap Peak %.2f MiB | "
+            "Top process: RSS:%.2f MiB [%s]",
+            self.max_memory_peak / 1048576, self.max_swap_peak / 1048576,
+            self.top_rss[0] / 1048576, self.top_rss[1]
         )
         out_file = os.path.join(self.buildroot.resultdir, 'system_monior.json')
         with open(out_file, 'w', encoding="utf-8") as f:
             json.dump({"total_max_memory" : self.max_memory_peak,
+                       "total_max_swap" : self.max_swap_peak,
                        "top_process_memory" : self.top_rss[0],
                        "top_process_cmdline" : self.top_rss[1]},
                        f)
 
     def __init__(self, plugins, conf, buildroot):
         self.max_memory_peak = 0
+        self.max_swap_peak = 0
         self.top_rss = (0, "")
         self.sysmon_timer_thread = None
         self.sysmon_stop_event = threading.Event()
