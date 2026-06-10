@@ -3,7 +3,7 @@
 %endif
 
 Name:       mock-core-configs
-Version:    44.2
+Version:    44.3
 Release:    1%{?dist}
 Summary:    Mock core config files basic chroots
 
@@ -156,6 +156,13 @@ fi
 %ghost %config(noreplace,missingok) %{_sysconfdir}/mock/default.cfg
 
 %changelog
+* Wed Jun 10 2026 Pavel Raiskup <pavel@raiskup.cz> 44.3-1
+- the fedora-release-eln renamed to fedora-eln-release
+- Add config for Fedora 44 version of RISC-V port (marcin@juszkiewicz.com.pl)
+- set bootstrap_image_ready=True for AlmaLinux configs (andrew.lukoshko@gmail.com)
+- re-enable bootstrap images for x86_64_v2 AlmaLinux configs (andrew.lukoshko@gmail.com)
+- remove dependency on python3-dnf (msuchy@redhat.com)
+
 * Tue Mar 03 2026 Pavel Raiskup <pavel@raiskup.cz> 44.2-1
 - Switch openSUSE Tumbleweed to DNF5 (ngompa@opensuse.org)
 

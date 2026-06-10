@@ -55,7 +55,13 @@ def _main():  # pylint: disable=too-many-locals
     else:
         tc_opts.append("--yes")
 
-    output_file = os.path.join(f"docs/Release-Notes-{options.version}.md")
+    subject_cfgs = ""
+    release_type = "Release-Notes"
+    if options.config_only:
+        release_type += "-Configs"
+        subject_cfgs = " and Configs ???"
+
+    output_file = os.path.join(f"docs/{release_type}-{options.version}.md")
 
     found = set()
     pattern = "|".join(TRANSFORM.keys())
@@ -64,12 +70,6 @@ def _main():  # pylint: disable=too-many-locals
     cmd = ["towncrier", "build", "--version", options.version] + tc_opts
     print(f"Calling {cmd}")
     subprocess.check_call(cmd)
-
-    subject_cfgs = ""
-    release_type = "Release-Notes"
-    if options.configs_only:
-        release_type += "-Configs"
-        subject_cfgs = " and Configs ???"
     index_md_snippet = (
         "## Release Notes\\n"
         f"* [{options.version}{subject_cfgs}]"
