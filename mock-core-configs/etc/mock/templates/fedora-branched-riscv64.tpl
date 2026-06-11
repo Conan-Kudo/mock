@@ -1,7 +1,7 @@
 config_opts['root'] = 'fedora-{{ releasever }}-{{ target_arch }}'
 
 config_opts['description'] = 'Fedora {{ releasever }} RISC-V'
-config_opts['chroot_setup_cmd'] = 'install @build'
+config_opts['chroot_setup_cmd'] = 'install @buildsys-build'
 
 config_opts['dist'] = 'fc{{ releasever }}'
 config_opts['extra_chroot_dirs'] = [ '/run/lock', ]
@@ -34,7 +34,7 @@ user_agent={{ user_agent }}
 name=local
 baseurl=https://riscv-koji.fedoraproject.org/repos/f{{ releasever }}-build/latest/riscv64/
 gpgcheck=0
-enabled=1
+enabled=0
 skip_if_unavailable=False
 
 [fedora]
